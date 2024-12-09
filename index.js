@@ -38,6 +38,14 @@ async function run() {
     // database creation ar jonno for courses
     const courseCollection = client.db("coursesDB").collection("courses");
 
+    const enrolledCourseCollection = client
+      .db("coursesDB")
+      .collection("enrolledCourses");
+
+    const progressCollection = client.db("coursesDB").collection("progress");
+
+    const reviewsCollection = client.db("coursesDB").collection("reviews");
+
     // course dekhanor jonno
     app.get("/courses", async (req, res) => {
       const cursor = courseCollection.find();
@@ -92,10 +100,80 @@ async function run() {
       res.send(result);
     });
 
+    //------------------- enrolled course related backend api start
+
+    app.post("/enrolledCourses", async (req, res) => {
+      const newEnrolledCourse = req.body;
+      const result = await enrolledCourseCollection.insertOne(
+        newEnrolledCourse
+      );
+      res.send(result);
+    });
+
+    // Get courses enrolled by user
+    app.get("/enrolledCourses", async (req, res) => {
+      const userEmail = req.query.email;
+      const query = { userEmail };
+      const courses = await enrolledCourseCollection.find(query).toArray();
+      res.send(courses);
+    });
+
+    // Initialize progress for a course
+    app.post("/progress", async (req, res) => {
+      const { userEmail, courseId } = req.body;
+      const progress = { userEmail, courseId, completedModules: 0 };
+      console.log(progress);
+      const result = await progressCollection.insertOne(progress);
+      res.send(result);
+    });
+
+    // Update progress for a course
+    app.patch("/progress/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await progressCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $inc: { completedModules: 1 } }
+      );
+      res.send(result);
+    });
+
+    // Get progress for a user in a specific course
+    app.get("/progress", async (req, res) => {
+      const { userEmail, courseId } = req.query;
+      const query = { userEmail, courseId };
+      const progress = await progressCollection.findOne(query);
+      res.send(progress);
+    });
+
+    // Add review and rating
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review);
+      res.send(result);
+    });
+
+    // Get reviews for a course
+    app.get("/reviews/:courseId", async (req, res) => {
+      const courseId = req.params.courseId;
+      const reviews = await reviewsCollection.find({ courseId }).toArray();
+      res.send(reviews);
+    });
+
+    //------------------- enrolled course related backend api end
+
     //---------------------------- users related backend api --------------------
 
     app.get("/users", async (req, res) => {
       const cursor = usersCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/userType", async (req, res) => {
+      const userEmail = req.query.email;
+      const query = { email: userEmail };
+      // console.log(query);
+      const cursor = usersCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
