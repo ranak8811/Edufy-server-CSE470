@@ -120,8 +120,8 @@ async function run() {
 
     // Initialize progress for a course
     app.post("/progress", async (req, res) => {
-      const { userEmail, courseId } = req.body;
-      const progress = { userEmail, courseId, completedModules: 0 };
+      const { userEmail, courseId, courseName } = req.body;
+      const progress = { courseName, userEmail, courseId, completedModules: 0 };
       console.log(progress);
       const result = await progressCollection.insertOne(progress);
       res.send(result);
@@ -130,6 +130,7 @@ async function run() {
     // Update progress for a course
     app.patch("/progress/:id", async (req, res) => {
       const id = req.params.id;
+      // console.log(id);
       const result = await progressCollection.updateOne(
         { _id: new ObjectId(id) },
         { $inc: { completedModules: 1 } }
