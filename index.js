@@ -45,10 +45,23 @@ async function run() {
     const progressCollection = client.db("coursesDB").collection("progress");
 
     const reviewsCollection = client.db("coursesDB").collection("reviews");
+    const bookmarksCollection = client.db("coursesDB").collection("bookmarks");
+    const announcementCollection = client
+      .db("coursesDB")
+      .collection("announcement");
+    const notesCollection = client.db("coursesDB").collection("courseNotes");
 
     // course dekhanor jonno
     app.get("/courses", async (req, res) => {
-      const cursor = courseCollection.find();
+      const { searchParams } = req.query;
+
+      let option = {};
+      if (searchParams) {
+        option = {
+          course_name: { $regex: searchParams, $options: "i" },
+        };
+      }
+      const cursor = courseCollection.find(option);
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -97,6 +110,34 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await courseCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.post("/bookmarks", async (req, res) => {
+      const newCourse = req.body;
+      console.log(newCourse);
+
+      const result = await bookmarksCollection.insertOne(newCourse);
+      res.send(result);
+    });
+
+    app.get("/bookmarks/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { bookmarkedEmail: email };
+      const courses = await bookmarksCollection.find(query).toArray();
+      res.send(courses);
+    });
+
+    app.post("/announcement", async (req, res) => {
+      const newAnnoucement = req.body;
+      console.log(newAnnoucement);
+
+      const result = await announcementCollection.insertOne(newAnnoucement);
+      res.send(result);
+    });
+
+    app.get("/announcement", async (req, res) => {
+      const result = await announcementCollection.find().toArray();
       res.send(result);
     });
 
@@ -153,11 +194,38 @@ async function run() {
       res.send(result);
     });
 
-    // Get reviews for a course
-    app.get("/reviews/:courseId", async (req, res) => {
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // delete review for a course
+    app.delete("/reviews/:courseId", async (req, res) => {
       const courseId = req.params.courseId;
-      const reviews = await reviewsCollection.find({ courseId }).toArray();
+      const query = { _id: new ObjectId(courseId) };
+      const reviews = await reviewsCollection.deleteOne(query);
       res.send(reviews);
+    });
+
+    app.get("/highRatedCourses", async (req, res) => {
+      const cursor = reviewsCollection.find().sort({ rating: -1 }).limit(5);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.post("/notes", async (req, res) => {
+      const note = req.body;
+      const result = await notesCollection.insertOne(note);
+      res.send(result);
+    });
+
+    app.get("/notes/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {
+        userEmail: email,
+      };
+      const courses = await notesCollection.find(query).toArray();
+      res.send(courses);
     });
 
     //------------------- enrolled course related backend api end
