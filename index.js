@@ -187,6 +187,15 @@ async function run() {
       res.send(progress);
     });
 
+    // Get all progress for a user
+    app.get("/progress/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await progressCollection.find(query).toArray();
+      // console.log(result);
+      res.send(result);
+    });
+
     // Add review and rating
     app.post("/reviews", async (req, res) => {
       const review = req.body;
@@ -235,6 +244,13 @@ async function run() {
     app.get("/users", async (req, res) => {
       const cursor = usersCollection.find();
       const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
       res.send(result);
     });
 
